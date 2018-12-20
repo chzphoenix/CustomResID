@@ -250,6 +250,17 @@ def replaceResIdInXml(File resFile, int newPkgId) throws Exception
     def buf = resFile.bytes
 
     for(def i = 0; i + 7 < buf.length; i=i+4){
+        if((buf[i] & 0xFF) == 0x80 && buf[i+1] == 0x01 && buf[i+2] == 0x08 && buf[i+3] == 0x00){
+            int chunkSize = ((buf[i+7]&0xFF) << 24) + ((buf[i+6]&0xFF) << 16) + ((buf[i+5]&0xFF) << 8) + (buf[i+4]&0xFF)
+            for(def j = i + 8; j < i + chunkSize; j=j+4){
+                if(buf[j+3] == 0x7f){
+                    buf[j+3] = newPkgId
+                    println resFile.name + "," + j
+                }
+            }
+            i = i + chunkSize - 4
+            continue
+        }
         if(buf[i] == 0x08 && buf[i+1] == 0x00 && buf[i+2] == 0x00 && (buf[i+3] == 0x01 || buf[i+3] == 0x02)){
             if(buf[i+7] == 0x7f){
                 buf[i+7] = newPkgId
